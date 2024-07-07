@@ -1,0 +1,52 @@
+services:
+  base:
+    privileged: true
+    tty: true
+    stdin_open: true
+    build:
+      context: docker
+      args:
+        BASEIMAGE: ubuntu:22.04
+        UID: ${UID}
+        GID: ${GID}
+        USER: ${USER}
+        GNAME: ${GNAME}
+    user: ${UID}:${GID}
+    volumes:
+      - ${HOME}:${HOME}/.host_home # for container on ssh server
+      - ${HOME}/.ssh:${HOME}/.ssh # for using git
+      - ${HOME}/.config:${HOME}/.config # for using tool's configurations
+      - ${HOME}/.local:${HOME}/.local # for using scripts in ~/.local/bin
+    environment:
+      USER: ${USER}
+      XAUTHORITY: /home/.host_home/.Xauthority # for container on ssh server
+      DISPLAY: ${DISPLAY}
+
+  intel:
+    build:
+      args:
+        BASEIMAGE: intel/oneapi-basekit:2024.2.0-devel-ubuntu22.04
+        RENDERGID: ${RENDERGID}
+        SETUPSCRIPT: setup.intel
+    extends:
+      service: base
+    devices:
+      - dev/dri
+
+  nvidia:
+    build:
+      args:
+        BASEIMAGE: pytorch/pytorch:2.3.1-cuda11.8-cudnn8-runtime
+        SETUPSCRIPT: setup.nvidia
+    extends:
+      service: base
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              capabilities: [gpu]
+
+
+    
+
